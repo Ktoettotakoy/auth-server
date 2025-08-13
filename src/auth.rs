@@ -5,7 +5,7 @@ use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Algorithm, 
 use std::fmt;
 use warp::{
     filters::header::headers_cloned,
-    http::header::{HeaderMap, HeaderValue, AUTHORIZATION,},
+    http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
     reject, Filter, Rejection
 };
 
@@ -38,7 +38,7 @@ impl fmt::Display for Role {
     }
 }
 
-// JWT claim
+/// JWT claim
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
     sub: String,
@@ -46,9 +46,10 @@ struct Claims {
     exp: usize,
 }
 
-
+/// Generates JWT token for a user
 pub fn generate_jwt_token(uid: &str, role: &Role) -> Result<String> {
     let expiration = Utc::now()
+        // TODO: increase ttl to 15 minutes or more
         .checked_add_signed(chrono::Duration::seconds(60))
         .expect("valid timestamp")
         .timestamp();
@@ -64,13 +65,14 @@ pub fn generate_jwt_token(uid: &str, role: &Role) -> Result<String> {
         .map_err(|_| Error::JWTTokenCreationError)
 }
 
-
+/// Authorization filter for the routes
 pub fn with_auth(role: Role) -> impl Filter<Extract = (String, ), Error = Rejection> + Clone {
     headers_cloned()
         .map(move |headers: HeaderMap<HeaderValue>| (role.clone(), headers))
         .and_then(authorize)
 }
 
+/// Authorization filter
 async fn authorize((role, headers): (Role, HeaderMap<HeaderValue>)) -> WebResult<String> {
     match jwt_from_header(&headers) {
         Ok(token) => {
@@ -84,6 +86,9 @@ async fn authorize((role, headers): (Role, HeaderMap<HeaderValue>)) -> WebResult
             if role == Role::Admin && Role::from_str(&decoded.claims.role) != Role::Admin {
                 return Err(reject::custom(Error::NoPermissionError))
             }
+            if role == Role::User && Role::from_str(&decoded.claims.role) != Role::User {
+                return Err(reject::custom(Error::NoPermissionError))
+            }
             // TODO: handle more roles
             Ok(decoded.claims.sub)
         }
@@ -91,6 +96,7 @@ async fn authorize((role, headers): (Role, HeaderMap<HeaderValue>)) -> WebResult
     }
 }
 
+/// Extract JWT token from Authorization header
 fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     let header = match headers.get(AUTHORIZATION) {
         Some(header) => header,

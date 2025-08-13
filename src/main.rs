@@ -91,6 +91,7 @@ pub async fn admin_handler(uid: String) -> WebResult<impl Reply> {
     // reply::json(&UserResponse { uid })
 }
 
+// TODO: replace with a proper mysql db
 fn init_users() -> HashMap<String, User> {
     let mut users = HashMap::new();
     users.insert(
