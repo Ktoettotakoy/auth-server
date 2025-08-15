@@ -1,6 +1,6 @@
 use crate::{error::Error};
 use serde::{Deserialize, Serialize};
-use crate::model::{WebResult, Result};
+use crate::models::{WebResult, Result};
 
 use chrono::prelude::*;
 

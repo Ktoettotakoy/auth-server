@@ -1,6 +1,6 @@
 -- Create the users table
 CREATE TABLE IF NOT EXISTS users (
-    uid INT PRIMARY KEY AUTO_INCREMENT,
+    uid CHAR(36) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('user', 'admin') NOT NULL DEFAULT 'user',

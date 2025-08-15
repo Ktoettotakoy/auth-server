@@ -1,5 +1,5 @@
-use sqlx::{MySql, MySqlPool, Pool, Row};
-use crate::model::{User, Result};
+use sqlx::{MySql, MySqlPool, Pool};
+use crate::models::{User, Result};
 use crate::error::Error;
 
 use super::passwords::{hash_password, verify_password};
@@ -39,7 +39,7 @@ pub async fn authenticate_user(pool: &DbPool, email: &str, password: &str) -> Re
     }
 }
 
-pub async fn create_user_with_hashed_password(pool: &DbPool, uid: &str, email: &str, password: &str, role: &str) -> Result<bool> {
+pub async fn create_user(pool: &DbPool, uid: &str, email: &str, password: &str, role: &str) -> Result<()> {
     // Hash the password before storing
     let password_hash = hash_password(password)?;
 
@@ -57,21 +57,6 @@ pub async fn create_user_with_hashed_password(pool: &DbPool, uid: &str, email: &
         }
     })?;
 
-    Ok(true)
+    Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_database_connection() {
-        let database_url = "mysql://auth_user:auth_password@localhost:3306/auth_db";
-        let result = create_pool(database_url).await;
-
-        // This test will only pass if MySQL is running
-        if result.is_ok() {
-            println!("Database connection successful!");
-        }
-    }
-}
