@@ -19,7 +19,6 @@ async fn main() {
     let db_pool = db::db_ops::create_pool(&database_url).await.unwrap();
     println!("Database connected successfully!");
 
-
     let login_route = warp::path("login")
         .and(warp::post())
         .and(with_db(db_pool.clone()))
@@ -50,6 +49,7 @@ async fn main() {
         .recover(handle_rejection);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    println!("Server running on http://127.0.0.1:3030");
 }
 
 // Database filter
@@ -102,7 +102,7 @@ mod tests {
     #[tokio::test]
     async fn test_database_connection() {
         dotenvy::dotenv().ok();
-        
+
         let database_url = std::env::var("DATABASE_URL").unwrap();
         let result = db::db_ops::create_pool(&database_url).await;
 
