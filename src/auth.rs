@@ -13,8 +13,14 @@ use warp::{
     reject, Filter, Rejection
 };
 
+
 const BEARER: &str = "Bearer ";
-const JWT_SECRET: &[u8] = b"mySecretChangeLater";
+fn jwt_secret() -> Vec<u8> {
+    std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET must be set")
+        .into_bytes()
+}
+
 
 #[derive(Clone, PartialEq)]
 pub enum Role {
@@ -66,7 +72,7 @@ pub fn generate_jwt_token(uid: &str, role: &Role) -> Result<String> {
     };
 
     let header = Header::new(Algorithm::HS512);
-    encode(&header, &claims, &EncodingKey::from_secret(JWT_SECRET))
+    encode(&header, &claims, &EncodingKey::from_secret(&jwt_secret()))
         .map_err(|_| Error::JWTTokenCreationError)
 }
 
@@ -83,7 +89,7 @@ async fn authorize((role, headers): (Role, HeaderMap<HeaderValue>)) -> WebResult
         Ok(token) => {
             let decoded = decode::<Claims>(
                 &token,
-                &DecodingKey::from_secret(JWT_SECRET),
+                &DecodingKey::from_secret(&jwt_secret()),
                 &Validation::new(Algorithm::HS512),
             )
             .map_err(|_| reject::custom(Error::JWTTokenError))?;

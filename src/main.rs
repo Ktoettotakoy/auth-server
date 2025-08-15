@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::net::{SocketAddr};
 
 use auth_server::error::*;
 use auth_server::models::*;
@@ -12,8 +13,13 @@ async fn main() {
     // Load environment variables
     dotenvy::dotenv().ok();
 
+
+
     // Database URL from environment or default
     let database_url = std::env::var("DATABASE_URL").unwrap();
+    let port: u16 = std::env::var("PORT").unwrap_or_else(|_| "3030".to_string()).parse().unwrap();
+    let host_orig: String = std::env::var("SERVER_HOST").unwrap();
+
 
     // Create database connection pool
     let db_pool = db::db_ops::create_pool(&database_url).await.unwrap();
@@ -48,8 +54,10 @@ async fn main() {
         .or(register_route)
         .recover(handle_rejection);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
-    println!("Server running on http://127.0.0.1:3030");
+    println!("Server running on http://{}:{}", host_orig, port);
+    let host = host_orig.parse::<std::net::IpAddr>().unwrap();
+    let socket: SocketAddr = (host, port).into();
+    warp::serve(routes).run(socket).await;
 }
 
 // Database filter
