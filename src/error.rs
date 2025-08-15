@@ -21,6 +21,25 @@ pub enum Error {
 
     #[error("No permission error")]
     NoPermissionError,
+
+    // New database errors
+    #[error("Database connection error")]
+    DatabaseConnectionError,
+
+    #[error("Database query error")]
+    DatabaseQueryError,
+
+    #[error("User not found")]
+    UserNotFoundError,
+
+    #[error("User already exists")]
+    UserAlreadyExistsError,
+
+    #[error("Password hashing error")]
+    PasswordHashError,
+
+    #[error("Password verification error")]
+    PasswordVerificationError,
 }
 
 #[derive(Serialize, Debug)]
@@ -32,7 +51,7 @@ struct ErrorResponse {
 impl warp::reject::Reject for Error {}
 
 pub async fn handle_rejection(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
-    let (code,message) = if err.is_not_found() {
+    let (code, message) = if err.is_not_found() {
         (StatusCode::NOT_FOUND, "Not Found".to_string())
     } else if let Some(e) = err.find::<Error>() {
         match e {
@@ -42,7 +61,12 @@ pub async fn handle_rejection(err: Rejection) -> std::result::Result<impl Reply,
             Error::JWTTokenError => (StatusCode::UNAUTHORIZED, e.to_string()),
             Error::JWTTokenCreationError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error".to_string()),
             Error::NoPermissionError => (StatusCode::UNAUTHORIZED, e.to_string()),
-            // _ => (StatusCode::BAD_REQUEST, e.to_string()),
+            Error::DatabaseConnectionError => (StatusCode::INTERNAL_SERVER_ERROR, "Database connection failed".to_string()),
+            Error::DatabaseQueryError => (StatusCode::INTERNAL_SERVER_ERROR, "Database query failed".to_string()),
+            Error::UserNotFoundError => (StatusCode::NOT_FOUND, e.to_string()),
+            Error::UserAlreadyExistsError => (StatusCode::CONFLICT, e.to_string()),
+            Error::PasswordHashError => (StatusCode::INTERNAL_SERVER_ERROR, "Password processing error".to_string()),
+            Error::PasswordVerificationError => (StatusCode::INTERNAL_SERVER_ERROR, "Password verification error".to_string()),
         }
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         (StatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed".to_string())

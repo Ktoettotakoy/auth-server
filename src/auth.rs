@@ -1,8 +1,12 @@
-use crate::{error::Error, Result, WebResult};
+use crate::{error::Error};
 use serde::{Deserialize, Serialize};
+use crate::model::{WebResult, Result};
+
 use chrono::prelude::*;
+
 use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Algorithm, Validation};
 use std::fmt;
+
 use warp::{
     filters::header::headers_cloned,
     http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
@@ -45,6 +49,7 @@ struct Claims {
     role: String,
     exp: usize,
 }
+
 
 /// Generates JWT token for a user
 pub fn generate_jwt_token(uid: &str, role: &Role) -> Result<String> {
