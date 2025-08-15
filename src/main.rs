@@ -17,7 +17,7 @@ async fn main() {
 
     // Database URL from environment or default
     let database_url = std::env::var("DATABASE_URL").unwrap();
-    let port: u16 = std::env::var("PORT").unwrap_or_else(|_| "3030".to_string()).parse().unwrap();
+    let port: u16 = std::env::var("SERVER_PORT").unwrap_or_else(|_| "3030".to_string()).parse().unwrap();
     let host_orig: String = std::env::var("SERVER_HOST").unwrap();
 
 
