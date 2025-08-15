@@ -15,14 +15,19 @@ COPY .sqlx ./.sqlx
 
 RUN cargo build --release
 
+# For the proper linux use this one (I guess)
+# RUN cargo build --release --target=x86_64-unknown-linux-musl
+
 # Stage 2: Runtime
-FROM alpine:latest
+FROM scratch
 
 # Set working directory
 WORKDIR /app
 
 # Copy compiled binary from builder
 COPY --from=builder /app/target/aarch64-unknown-linux-musl/release/auth-server .
+# For the proper linux use this one (I guess)
+# COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/auth-server .
 
 USER 1000
 # Copy .env
