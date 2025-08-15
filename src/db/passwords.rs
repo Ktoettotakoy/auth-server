@@ -1,6 +1,6 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
 use crate::error::Error;
-use crate::model::{Result};
+use crate::models::{Result};
 
 /// Hash a password using bcrypt
 pub fn hash_password(password: &str) -> Result<String> {

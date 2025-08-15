@@ -11,7 +11,7 @@ pub type Users = Arc<HashMap<String, User>>;
 
 #[derive(Clone)]
 pub struct User {
-    pub uid: i32,
+    pub uid: String,
     pub email: String,
     pub pw: String,
     pub role: String // maybe add more roles later
@@ -26,4 +26,16 @@ pub struct LoginRequest {
 #[derive(Serialize)]
 pub struct LoginResponse {
     pub token: String,
+}
+
+#[derive(Deserialize)]
+pub struct RegisterRequest {
+    pub email: String,
+    pub pw: String,
+    pub role: String,
+}
+
+#[derive(Serialize)]
+pub struct RegisterResponse {
+    pub success: bool,
 }
