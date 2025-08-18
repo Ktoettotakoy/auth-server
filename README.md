@@ -1,42 +1,50 @@
 # Auth Server with MySQL & Password Encryption
 
-## Features Added
-- ✅ **Bcrypt Password Hashing**: All passwords are securely hashed
-- ✅ **User Registration**: New endpoint to create users
-- ✅ **Password Verification**: Secure login with hash comparison
-- ✅ **Duplicate Prevention**: Email uniqueness enforced
-- ✅ **Containerised**: run `docker-compose up -d` and you're good to go
+A Rust-based authentication server with:
+- MySQL and password hashing for secure storage
+- JWT-based access control
+- Role-based routes (user/admin)...
 
 ## Quick Start
 
-### 0. Prereqs
-I had to run this command for making it possible to build auth_server container. It generated an .sqlx folder which is essential.
+### 1. Clone & Setup
 ```bash
-cargo sqlx prepare --workspace
+git clone 
+cd auth-server
 ```
+### 2. Set up .env
+See `sample.env`
 
-Don't forget to add .env (see below)
-
-### 1. Start MySQL with Docker
+### 3. Start MySQL with Docker
 ```bash
 # Start MySQL and Auth-Server containers
 docker-compose up -d
-```
-### 2. View logs
-```bash
-# Wait for MySQL to be ready (check logs)
-docker-compose logs -f mysql
-docker-compose logs -f auth_server
 ```
 
 ## API Endpoints
 
 ### Authentication
-- `POST /register` - Create new user account
+- `POST /register` - Create new user account (requires admin token)
+```json
+{
+  "email": "testuser@test.com",
+  "pw": "securepassword"
+  "role": "user"
+}
+```
 - `POST /login` - Login and get JWT token
+```json
+{
+  "email": "testuser@test.com",
+  "pw": "securepassword"
+}
+```
 
 ### Protected Routes
 - `GET /user` - User-only endpoint (requires valid token)
+```bash
+Authorization: Bearer <JWT_TOKEN>
+```
 - `GET /admin` - Admin-only endpoint (requires admin token)
 
 ## Environment Variables
@@ -53,6 +61,7 @@ Create a `.env` file or set these environment variables:
 - `DB_PORT`: Db port (default: 3306)
 
 
-## Next Steps (Phase 2)
+## Next Steps 
 - Token refresh mechanism
-- Other improvements
+- Improved error handling & logging
+- Password reset & email verification
