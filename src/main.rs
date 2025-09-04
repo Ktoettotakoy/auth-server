@@ -1,5 +1,5 @@
 use std::convert::Infallible;
-use std::net::{SocketAddr};
+use std::net::SocketAddr;
 
 use auth_server::error::*;
 use auth_server::models::*;
@@ -10,20 +10,22 @@ use warp::{reject,reply, Filter, Reply};
 
 #[tokio::main]
 async fn main() {
-    // Load environment variables
-    dotenvy::dotenv().ok();
-
-
 
     // Database URL from environment or default
     let database_url = std::env::var("DATABASE_URL").unwrap();
     let port: u16 = std::env::var("SERVER_PORT").unwrap_or_else(|_| "3030".to_string()).parse().unwrap();
     let host_orig: String = std::env::var("SERVER_HOST").unwrap();
+    let access_origin: String = std::env::var("ACCESS_ORIGIN").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
 
     // Create database connection pool
     let db_pool = db::db_ops::create_pool(&database_url).await.unwrap();
     println!("Database connected successfully!");
+
+    let cors = warp::cors()
+        .allow_origin(access_origin)
+        .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+        .allow_headers(vec!["Content-Type", "Authorization"]);
 
     let login_route = warp::path("login")
         .and(warp::post())
@@ -31,15 +33,15 @@ async fn main() {
         .and(warp::body::json())
         .and_then(login_handler);
 
-    let user_route = warp::path("user")
-        .and(warp::get())
-        .and(with_auth(Role::User))
-        .and_then(user_handler);
+    // let user_route = warp::path("user")
+    //     .and(warp::get())
+    //     .and(with_auth(Role::User))
+    //     .and_then(user_handler);
 
-    let admin_route = warp::path("admin")
-        .and(warp::get())
-        .and(with_auth(Role::Admin))
-        .and_then(admin_handler);
+    // let admin_route = warp::path("admin")
+    //     .and(warp::get())
+    //     .and(with_auth(Role::Admin))
+    //     .and_then(admin_handler);
 
     let register_route = warp::path("register")
         .and(warp::post())
@@ -49,10 +51,11 @@ async fn main() {
         .and_then(register_handler);
 
     let routes = login_route
-        .or(user_route)
-        .or(admin_route)
+        // .or(user_route)
+        // .or(admin_route)
         .or(register_route)
-        .recover(handle_rejection);
+        .recover(handle_rejection)
+        .with(cors);
 
     println!("Server running on http://{}:{}", host_orig, port);
     let host = host_orig.parse::<std::net::IpAddr>().unwrap();
@@ -77,15 +80,15 @@ pub async fn login_handler(db_pool: DbPool, body: LoginRequest) -> WebResult<imp
     Ok(reply::json(&LoginResponse { token }))
 }
 
-pub async fn user_handler(uid: String) -> WebResult<impl Reply> {
-    Ok(format!("Hello user: {}", uid))
-    // reply::json(&UserResponse { uid })
-}
+// pub async fn user_handler(uid: String) -> WebResult<impl Reply> {
+//     Ok(format!("Hello user: {}", uid))
+//     // reply::json(&UserResponse { uid })
+// }
 
-pub async fn admin_handler(uid: String) -> WebResult<impl Reply> {
-    Ok(format!("Hello admin: {}", uid))
-    // reply::json(&UserResponse { uid })
-}
+// pub async fn admin_handler(uid: String) -> WebResult<impl Reply> {
+//     Ok(format!("Hello admin: {}", uid))
+//     // reply::json(&UserResponse { uid })
+// }
 
 pub async fn register_handler(admin_uid: String, db_pool: DbPool, body: RegisterRequest) -> WebResult<impl Reply> {
     println!("Admin {} is creating a new user", admin_uid);
