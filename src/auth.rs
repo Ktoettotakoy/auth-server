@@ -50,9 +50,9 @@ impl fmt::Display for Role {
 
 /// JWT claim
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-    role: String,
+pub struct Claims {
+    pub sub: String,
+    pub role: String,
     exp: usize,
 }
 
@@ -80,6 +80,31 @@ pub fn with_auth(role: Role) -> impl Filter<Extract = (String, ), Error = Reject
     headers_cloned()
         .map(move |headers: HeaderMap<HeaderValue>| (role.clone(), headers))
         .and_then(authorize)
+}
+
+/// Verify JWT token from headers (pure function, can be called anywhere)
+pub fn verify_jwt_token(headers: &HeaderMap<HeaderValue>) -> Result<Claims> {
+    match jwt_from_header(headers) {
+        Ok(token) => decode_jwt_token(&token),
+        Err(e) => Err(e),
+    }
+}
+
+/// Decode JWT token string into Claims
+fn decode_jwt_token(token: &str) -> Result<Claims> {
+    let decoded = decode::<Claims>(
+        &token,
+        &DecodingKey::from_secret(&jwt_secret()),
+        &Validation::new(Algorithm::HS512),
+    )
+    .map_err(|e| {
+        if let jsonwebtoken::errors::ErrorKind::ExpiredSignature = e.kind() {
+            Error::JWTTokenExpired
+        } else {
+            Error::JWTTokenError
+        }
+    })?;
+    Ok(decoded.claims)
 }
 
 /// Authorization filter
