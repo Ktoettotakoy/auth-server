@@ -7,9 +7,20 @@ use auth_server::auth::{with_auth, Role};
 use auth_server::db::db_ops::{DbPool};
 use auth_server::*;
 use warp::{reject,reply, Filter, Reply};
+use warp::header::headers_cloned;
+use warp::http::header::{HeaderMap, HeaderValue};
+
+use tracing::{info};
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() {
+
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+
+    info!("Starting auth-server...");
 
     // Database URL from environment or default
     let database_url = std::env::var("DATABASE_URL").unwrap();
@@ -20,10 +31,10 @@ async fn main() {
 
     // Create database connection pool
     let db_pool = db::db_ops::create_pool(&database_url).await.unwrap();
-    println!("Database connected successfully!");
+    info!("Database connected successfully!");
 
     let cors = warp::cors()
-        .allow_origin(access_origin)
+        .allow_origin(&*access_origin)
         .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
         .allow_headers(vec!["Content-Type", "Authorization"]);
 
@@ -31,7 +42,13 @@ async fn main() {
         .and(warp::post())
         .and(with_db(db_pool.clone()))
         .and(warp::body::json())
+
         .and_then(login_handler);
+
+    let validate_route = warp::path("validate")
+        .and(warp::get())
+        .and(headers_cloned())
+        .and_then(validate_token_handler);
 
     // let user_route = warp::path("user")
     //     .and(warp::get())
@@ -54,10 +71,12 @@ async fn main() {
         // .or(user_route)
         // .or(admin_route)
         .or(register_route)
+        .or(validate_route)
+        .with(warp::log("auth_server"))
         .recover(handle_rejection)
         .with(cors);
 
-    println!("Server running on http://{}:{}", host_orig, port);
+    info!("Server running on http://{}:{}", host_orig, port);
     let host = host_orig.parse::<std::net::IpAddr>().unwrap();
     let socket: SocketAddr = (host, port).into();
     warp::serve(routes).run(socket).await;
@@ -103,6 +122,17 @@ pub async fn register_handler(admin_uid: String, db_pool: DbPool, body: Register
     Ok(reply::json(&RegisterResponse { success: true }))
 }
 
+pub async fn validate_token_handler(headers: HeaderMap<HeaderValue>) -> WebResult<impl warp::Reply> {
+
+    let claims = auth::verify_jwt_token(&headers)
+        .map_err(|e| warp::reject::custom(e))?;
+
+    Ok(warp::reply::json(&serde_json::json!({
+        "uid": claims.sub,
+        "role": claims.role
+    })))
+}
+
 
 
 
@@ -112,7 +142,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_database_connection() {
-        dotenvy::dotenv().ok();
 
         let database_url = std::env::var("DATABASE_URL").unwrap();
         let result = db::db_ops::create_pool(&database_url).await;
