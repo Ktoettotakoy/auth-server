@@ -18,6 +18,8 @@ pub enum Error {
     JWTTokenError,
     #[error("JWT token creation error")]
     JWTTokenCreationError,
+    #[error("JWT token expired")]
+    JWTTokenExpired,
 
     #[error("No permission error")]
     NoPermissionError,
@@ -59,6 +61,7 @@ pub async fn handle_rejection(err: Rejection) -> std::result::Result<impl Reply,
             Error::MissingAuthorizationHeader => (StatusCode::UNAUTHORIZED, e.to_string()),
             Error::InvalidAuthorizationHeader => (StatusCode::UNAUTHORIZED, e.to_string()),
             Error::JWTTokenError => (StatusCode::UNAUTHORIZED, e.to_string()),
+            Error::JWTTokenExpired => (StatusCode::UNAUTHORIZED, e.to_string()),
             Error::JWTTokenCreationError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error".to_string()),
             Error::NoPermissionError => (StatusCode::UNAUTHORIZED, e.to_string()),
             Error::DatabaseConnectionError => (StatusCode::INTERNAL_SERVER_ERROR, "Database connection failed".to_string()),
@@ -67,6 +70,7 @@ pub async fn handle_rejection(err: Rejection) -> std::result::Result<impl Reply,
             Error::UserAlreadyExistsError => (StatusCode::CONFLICT, e.to_string()),
             Error::PasswordHashError => (StatusCode::INTERNAL_SERVER_ERROR, "Password processing error".to_string()),
             Error::PasswordVerificationError => (StatusCode::INTERNAL_SERVER_ERROR, "Password verification error".to_string()),
+
         }
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         (StatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed".to_string())
