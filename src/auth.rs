@@ -60,8 +60,7 @@ struct Claims {
 /// Generates JWT token for a user
 pub fn generate_jwt_token(uid: &str, role: &Role) -> Result<String> {
     let expiration = Utc::now()
-        // TODO: increase ttl to 15 minutes or more
-        .checked_add_signed(chrono::Duration::seconds(60))
+        .checked_add_signed(chrono::Duration::seconds(60*30))
         .expect("valid timestamp")
         .timestamp();
 
