@@ -30,8 +30,6 @@ COPY --from=builder /app/target/aarch64-unknown-linux-musl/release/auth-server .
 # COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/auth-server .
 
 USER 1000
-# Copy .env
-COPY .env ./
 
 # Run the server
 CMD ["./auth-server"]
