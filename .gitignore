@@ -30,6 +30,3 @@ target
 # Added by cargo
 
 /target
-
-# Cargo lock can be generated after git clone
-Cargo.lock
