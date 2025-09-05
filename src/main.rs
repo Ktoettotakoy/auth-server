@@ -72,8 +72,8 @@ async fn main() {
         // .or(admin_route)
         .or(register_route)
         .or(validate_route)
-        .with(warp::log("auth_server"))
         .recover(handle_rejection)
+        .with(warp::log("auth_server"))
         .with(cors);
 
     info!("Server running on http://{}:{}", host_orig, port);
